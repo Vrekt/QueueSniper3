@@ -59,3 +59,8 @@ However as a result link/unlink/stats commands will be disabled)
 Then, run the file with these arguments ``java -jar QueueSniper.jar <discord token> <username> <password>``
 
 For example if you wanted to run it without a username and password ``java -jar QueueSniper.jar MYTOKEN a a``
+
+# Credits
+
+- Me
+- Fortnite-2 by RobertoGraham for the stats API, you can find that project [here](https://github.com/RobertoGraham/fortnite-2/)
