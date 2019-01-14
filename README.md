@@ -21,6 +21,7 @@ Commands (Note default prefix is '.', but you can change this with .config):
   - If you are an administrator you can unlink other players account like this ``!unlink @member``.
   - ``!stats`` - Allows a player to view their stats.
   - ``!stats @player`` - Allows a player to view another players stats.
+  - ``!config`` - For changing config options
  
  Here are some screenshots:
  
