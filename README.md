@@ -51,8 +51,10 @@ Once you have JDK 11 installed verify its the correct version by running ``java 
 Now, head over to the releases page [here](https://github.com/Vrekt/QueueSniper3/releases) and grab the latest JAR.
 
 Next, get your discord token and you will also need your epic games username/password, this is for the statistics API.
+
 (NOTE: If you do not want to provide a username and password you can just type random characters in those fields.
 However as a result link/unlink/stats commands will be disabled)
+
 
 Then, run the file with these arguments ``java -jar QueueSniper.jar <discord token> <username> <password>``
 
