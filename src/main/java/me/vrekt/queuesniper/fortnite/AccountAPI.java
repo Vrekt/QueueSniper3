@@ -126,7 +126,7 @@ public class AccountAPI {
             channel.sendMessage(embed.build()).queue(msg -> {
                 msg.addReaction("\u2B05").queue();
                 msg.addReaction("\u27A1").queue();
-                InteractiveEmbed.register(msg, from, channel, configuration, embed, pages);
+                InteractiveEmbed.register(msg, from, channel, configuration, embed, pages, 5);
             });
         } catch (ErrorResponseException | InsufficientPermissionException exception) {
             //
@@ -141,6 +141,8 @@ public class AccountAPI {
      * @param accounts      the accounts
      */
     public static void loadAccounts(GuildConfiguration configuration, Map<String, Map<String, String>> accounts) {
+        if (fortnite == null) return;
+
         accounts.forEach((member, map) -> map.forEach((id, platform) -> {
             try {
                 fortnite.account().findAllByAccountIds(id).ifPresent(a -> a.stream().findFirst()

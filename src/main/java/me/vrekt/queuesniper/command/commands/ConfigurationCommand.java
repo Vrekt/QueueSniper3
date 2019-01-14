@@ -56,12 +56,13 @@ public class ConfigurationCommand extends Command {
         ListUtils.partition(fields, 6).forEach(list -> pages.add(new Page(list)));
         fields.stream().limit(6).forEach(embed::addField);
 
-        embed.setFooter("This embed will delete itself in 5 minutes.", null);
+        embed.setFooter("This embed will delete itself in 2 minutes.", null);
         try {
             channel.sendMessage(embed.build()).queue(msg -> {
                 msg.addReaction("\u2B05").queue();
                 msg.addReaction("\u27A1").queue();
-                new ConfigurationOptionSelectionHandler(configuration, from, channel, InteractiveEmbed.register(msg, from, channel, configuration, embed, pages));
+                new ConfigurationOptionSelectionHandler(configuration, from, channel, InteractiveEmbed.register(msg, from, channel,
+                        configuration, embed, pages, 2));
             });
         } catch (ErrorResponseException | InsufficientPermissionException exception) {
             //

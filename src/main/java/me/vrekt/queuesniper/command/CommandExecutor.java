@@ -2,6 +2,7 @@ package me.vrekt.queuesniper.command;
 
 import me.vrekt.queuesniper.command.commands.CancelCommand;
 import me.vrekt.queuesniper.command.commands.ConfigurationCommand;
+import me.vrekt.queuesniper.command.commands.HelpCommand;
 import me.vrekt.queuesniper.command.commands.LinkCommand;
 import me.vrekt.queuesniper.command.commands.LockCommand;
 import me.vrekt.queuesniper.command.commands.SetupCommand;
@@ -47,6 +48,7 @@ public class CommandExecutor {
             commands.add(new UnlinkCommand());
             commands.add(new StatsCommand());
         }
+        commands.add(new HelpCommand());
         jda.addEventListener(this);
     }
 
@@ -66,8 +68,8 @@ public class CommandExecutor {
         if (find == null) return;
 
         // they have not setup
-        boolean isInvalid = configuration.isInvalidConfiguration() || !configuration.checkConfigurationIntegrity();
-        if (isInvalid && !(find instanceof SetupCommand)) {
+        boolean isValid = !configuration.isInvalidConfiguration() && configuration.checkConfigurationIntegrity();
+        if (!isValid && !(find instanceof SetupCommand)) {
             MessageAction.send(channel, from.getAsMention() + " please setup before doing this, you can type .setup to get started.\nIf " +
                     "you already setup once then this means one of the options you set is invalid now.");
             return;

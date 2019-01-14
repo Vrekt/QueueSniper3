@@ -3,6 +3,7 @@ package me.vrekt.queuesniper.command.commands;
 import me.vrekt.queuesniper.command.Command;
 import me.vrekt.queuesniper.command.commands.setup.ConfigurationOptionHandler;
 import me.vrekt.queuesniper.guild.GuildConfiguration;
+import me.vrekt.queuesniper.guild.GuildConfigurationBuilder;
 import me.vrekt.queuesniper.guild.GuildConfigurationImpl;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Member;
@@ -38,11 +39,17 @@ public class SetupCommand extends Command {
             Member from = event.getMember();
 
             GuildConfiguration configuration = GuildConfigurationImpl.getConfiguration(event.getGuild().getId());
+            if (configuration == null) {
+                configuration = new GuildConfigurationBuilder(event.getGuild()).build();
+                GuildConfigurationImpl.addConfiguration(configuration);
+            }
+
             if (configuration.isSelf(from)) return;
             if (!monitors.containsKey(configuration)) return;
             if (event.getMessage().getContentDisplay().contains(configuration.getPrefix() + "setup")) return;
 
             ConfigurationOptionHandler monitor = monitors.get(configuration);
+            if(!from.getUser().getId().equals(monitor.getMember().getUser().getId())) return;
 
             if (!channel.getId().equals(monitor.getChannel().getId())) return;
             if (monitors.get(configuration).handleRequest(event.getMessage(), ConfigurationOptionHandler.ReturnType.FINISHED)) {

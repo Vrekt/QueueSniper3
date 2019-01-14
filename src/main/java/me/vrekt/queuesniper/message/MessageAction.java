@@ -2,8 +2,6 @@ package me.vrekt.queuesniper.message;
 
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.TextChannel;
-import net.dv8tion.jda.api.exceptions.ErrorResponseException;
-import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
 
 public class MessageAction {
 
@@ -14,7 +12,7 @@ public class MessageAction {
 
         try {
             channel.sendMessage(message).queue();
-        } catch (ErrorResponseException | InsufficientPermissionException exception) {
+        } catch (Exception exception) {
             return false;
         }
         return true;
@@ -27,7 +25,7 @@ public class MessageAction {
 
         try {
             channel.sendMessage(message).queue();
-        } catch (ErrorResponseException | InsufficientPermissionException exception) {
+        } catch (Exception exception) {
             return false;
         }
         return true;
@@ -40,7 +38,7 @@ public class MessageAction {
 
         try {
             channel.deleteMessageById(messageId).queue();
-        } catch (ErrorResponseException | InsufficientPermissionException exception) {
+        } catch (Exception exception) {
             return false;
         }
         return true;
@@ -53,7 +51,7 @@ public class MessageAction {
 
         try {
             channel.editMessageById(messageId, embed).queue();
-        } catch (ErrorResponseException | InsufficientPermissionException exception) {
+        } catch (Exception exception) {
             return false;
         }
         return true;

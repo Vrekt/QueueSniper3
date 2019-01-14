@@ -27,28 +27,32 @@ public class InteractiveEmbed {
     private final TextChannel channel;
     private final GuildConfiguration configuration;
     private final long id;
+    private final int timeout;
 
     private EmbedBuilder embed;
     private Page current;
 
-    private InteractiveEmbed(Message message, Member from, TextChannel channel, GuildConfiguration configuration) {
+    private InteractiveEmbed(Message message, Member from, TextChannel channel, GuildConfiguration configuration, int timeout) {
         this.message = message;
         this.member = from;
         this.channel = channel;
         this.configuration = configuration;
+        this.timeout = timeout;
         id = System.currentTimeMillis();
 
-        Concurrent.runAsyncLater(this::delete, Duration.of(5, ChronoUnit.MINUTES).toMillis(), id);
+        Concurrent.runAsyncLater(this::delete, Duration.of(timeout, ChronoUnit.MINUTES).toMillis(), id);
         channel.getJDA().addEventListener(this);
     }
 
-    private InteractiveEmbed(Message message, Member from, TextChannel channel, GuildConfiguration configuration, EmbedBuilder embed) {
-        this(message, from, channel, configuration);
+    private InteractiveEmbed(Message message, Member from, TextChannel channel, GuildConfiguration configuration, EmbedBuilder embed,
+                             int timeout) {
+        this(message, from, channel, configuration, timeout);
         this.embed = embed;
     }
 
-    public static InteractiveEmbed register(Message message, Member from, TextChannel channel, GuildConfiguration configuration, EmbedBuilder embed, List<Page> pages) {
-        InteractiveEmbed interactiveEmbed = new InteractiveEmbed(message, from, channel, configuration, embed);
+    public static InteractiveEmbed register(Message message, Member from, TextChannel channel, GuildConfiguration configuration,
+                                            EmbedBuilder embed, List<Page> pages, int timeout) {
+        InteractiveEmbed interactiveEmbed = new InteractiveEmbed(message, from, channel, configuration, embed, timeout);
         interactiveEmbed.addPages(pages);
         interactiveEmbed.setCurrent(pages.get(0));
         return interactiveEmbed;
@@ -111,7 +115,7 @@ public class InteractiveEmbed {
         }
 
         EmbedBuilder embed = current.addAllPages(this.embed == null ? EmbedUtility.getSnipeEmbed() : this.embed.clearFields());
-        embed.setFooter("Current page: " + "[" + (index + 1) + "/" + pages.size() + "] (This embed will delete itself in 5 minutes.)",
+        embed.setFooter("Current page: " + "[" + (index + 1) + "/" + pages.size() + "] (This embed will delete itself in " + timeout + " minutes.)",
                 from.getUser().getAvatarUrl());
         MessageAction.edit(channel, message.getId(), embed.build());
     }

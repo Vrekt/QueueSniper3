@@ -40,6 +40,10 @@ public class ConfigurationOptionHandler {
         this.option = option;
     }
 
+    public Member getMember() {
+        return member;
+    }
+
     /**
      * Handles setting configuration options
      *

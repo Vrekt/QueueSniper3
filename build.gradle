@@ -13,7 +13,7 @@ repositories {
 }
 
 dependencies {
-    compile 'net.dv8tion:JDA:4.ALPHA.0_6'
+    compile 'net.dv8tion:JDA:4.ALPHA.0_8'
     compile group: 'org.yaml', name: 'snakeyaml', version: '1.23'
     compile 'com.sedmelluq:lavaplayer:1.3.10'
     compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.8.1'
