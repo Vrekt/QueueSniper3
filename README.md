@@ -43,6 +43,9 @@ Make sure it has send permissions first time, if the bot is not responding at al
  - Once that is finished you're all set! If you're afraid the bot does not have proper permissions type any command,
  - you will see a warning prompt if it does not have all permissions required.
 
+# Help
+If you need further help or need to report a problem open and issue or contact me on discord: vrekt#4387
+
 # Self hosting
 
 Self hosting requires JDK 11. You can find it [here](https://www.oracle.com/technetwork/java/javase/downloads/jdk11-downloads-5066655.html)
