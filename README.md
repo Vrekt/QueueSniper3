@@ -35,7 +35,7 @@ Commands (Note default prefix is '.', but you can change this with .config):
  
  # Adding QueueSniper to your discord
 
-You can add it to your discord [here](https://discordapp.com/oauth2/authorize?&client_id=513096941693960223&scope=bot)
+You can add it to your discord [here](https://discordapp.com/oauth2/authorize?client_id=513096941693960223&scope=bot&permissions=3370064)
 
 Make sure it has send permissions first time, if the bot is not responding at all this is 99.9% a permission problem.
 
