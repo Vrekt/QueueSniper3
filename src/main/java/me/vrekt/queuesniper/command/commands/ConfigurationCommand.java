@@ -25,6 +25,7 @@ import org.apache.commons.lang3.math.NumberUtils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ConfigurationCommand extends Command {
@@ -91,7 +92,7 @@ public class ConfigurationCommand extends Command {
 
             JDA jda = channel.getJDA();
             jda.addEventListener(this);
-            Concurrent.runAsyncLater(() -> jda.removeEventListener(this), 120000, System.currentTimeMillis());
+            Concurrent.runAsyncLater(() -> jda.removeEventListener(this), 120000, UUID.randomUUID().toString());
         }
 
         @SubscribeEvent

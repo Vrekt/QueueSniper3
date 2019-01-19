@@ -10,6 +10,7 @@ import me.vrekt.queuesniper.embed.EmbedUtility;
 import me.vrekt.queuesniper.embed.interactive.InteractiveEmbed;
 import me.vrekt.queuesniper.embed.interactive.Page;
 import me.vrekt.queuesniper.guild.GuildConfiguration;
+import me.vrekt.queuesniper.match.Playlist;
 import me.vrekt.queuesniper.message.MessageAction;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Member;
@@ -134,6 +135,17 @@ public class AccountAPI {
 
     }
 
+    public static Statistic getStatistic(Account account, Member from, Playlist playlist, GuildConfiguration configuration) {
+        PartyType type = PartyType.valueOf(playlist.name());
+        Platform platform = configuration.getPlatform(from.getUser().getId(), account);
+        try {
+            return fortnite.statistic().findAllByAccountForCurrentSeason(account).map(filterableStatistic ->
+                    filterableStatistic.byPlatform(platform).byPartyType(type)).orElse(null);
+        } catch (IOException exception) {
+            return null;
+        }
+    }
+
     /**
      * Loads the accounts that were saved to this config
      *
@@ -146,7 +158,9 @@ public class AccountAPI {
         accounts.forEach((member, map) -> map.forEach((id, platform) -> {
             try {
                 fortnite.account().findAllByAccountIds(id).ifPresent(a -> a.stream().findFirst()
-                        .ifPresent(account -> configuration.addAccount(member, account, Platform.valueOf(platform))));
+                        .ifPresent(account -> {
+                            configuration.addAccount(member, account, Platform.valueOf(platform));
+                        }));
             } catch (IOException exception) {
                 //
             }
@@ -157,6 +171,7 @@ public class AccountAPI {
      * Closes the fortnite instance
      */
     public static void close() {
+        if (fortnite == null) return;
         fortnite.close();
     }
 

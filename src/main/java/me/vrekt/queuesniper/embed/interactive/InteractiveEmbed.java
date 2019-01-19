@@ -18,6 +18,7 @@ import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class InteractiveEmbed {
 
@@ -26,7 +27,7 @@ public class InteractiveEmbed {
     private final Member member;
     private final TextChannel channel;
     private final GuildConfiguration configuration;
-    private final long id;
+    private final String id;
     private final int timeout;
 
     private EmbedBuilder embed;
@@ -38,7 +39,7 @@ public class InteractiveEmbed {
         this.channel = channel;
         this.configuration = configuration;
         this.timeout = timeout;
-        id = System.currentTimeMillis();
+        id = UUID.randomUUID().toString();
 
         Concurrent.runAsyncLater(this::delete, Duration.of(timeout, ChronoUnit.MINUTES).toMillis(), id);
         channel.getJDA().addEventListener(this);

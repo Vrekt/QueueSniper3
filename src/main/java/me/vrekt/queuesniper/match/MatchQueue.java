@@ -19,7 +19,7 @@ public class MatchQueue {
     private static final ConcurrentHashMap<Playlist, LinkedList<ASnipeMatch>> MATCHES = new ConcurrentHashMap<>();
 
     public static void start() {
-        Concurrent.runAsyncTimer(MatchQueue::updateQueue, 1000);
+        Concurrent.runAsyncTimer(MatchQueue::updateQueue, "qq", 1000);
     }
 
     /**
@@ -70,7 +70,9 @@ public class MatchQueue {
      * @param match the match
      */
     static void matchFinished(ASnipeMatch match) {
-        MATCHES.get(match.getType()).remove(match);
+        if (MATCHES.containsKey(match.getType())) {
+            MATCHES.get(match.getType()).remove(match);
+        }
     }
 
     /**

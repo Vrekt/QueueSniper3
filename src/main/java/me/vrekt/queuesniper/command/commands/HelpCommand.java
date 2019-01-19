@@ -23,6 +23,7 @@ public class HelpCommand extends Command {
 
         // TODO: Commands enum so this isn't 'hard coded'
         String prefix = configuration.getPrefix();
+        embed.setTitle("Found a problem or need further help? Contact: vrekt#4387 on discord");
 
         String commands = "**" + prefix + "start <gamemode> (optional) #channel**" +
                 "\n*This command starts a snipe match, if you specify a channel then all embeds will go there*\n" +

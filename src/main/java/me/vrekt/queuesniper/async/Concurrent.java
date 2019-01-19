@@ -41,7 +41,7 @@ public class Concurrent {
      * @param runnable the task
      * @param delay    the amount of time to wait (in millis)
      */
-    public static void runAsyncLater(Runnable runnable, long delay, long id) {
+    public static void runAsyncLater(Runnable runnable, long delay, String id) {
         TASKS.put(runnable, new Task(delay, id, false));
     }
 
@@ -50,18 +50,19 @@ public class Concurrent {
      *
      * @param id the id
      */
-    public static void cancelTask(long id) {
-        TASKS.entrySet().removeIf(entry -> entry.getValue().getId() == id);
+    public static void cancelTask(String id) {
+        TASKS.entrySet().removeIf(entry -> entry.getValue().getId().equals(id));
     }
 
     /**
      * Runs the task every X milliseconds async
      *
      * @param runnable the task
+     * @param id       the id of the task
      * @param delay    the amount of time to wait between execution (in millis)
      */
-    public static void runAsyncTimer(Runnable runnable, long delay) {
-        TASKS.put(runnable, new Task(delay, delay, true));
+    public static void runAsyncTimer(Runnable runnable, String id, long delay) {
+        TASKS.put(runnable, new Task(delay, id, true));
     }
 
     /**
@@ -105,12 +106,14 @@ public class Concurrent {
      */
     private static class Task {
 
-        private final long delay, id;
+        private final long delay;
         private final boolean timer;
+
+        private String id;
 
         private long queued;
 
-        Task(long delay, long id, boolean timer) {
+        Task(long delay, String id, boolean timer) {
             this.queued = System.currentTimeMillis();
             this.delay = delay;
             this.id = id;
@@ -129,7 +132,7 @@ public class Concurrent {
             return now - queued >= delay;
         }
 
-        long getId() {
+        public String getId() {
             return id;
         }
     }

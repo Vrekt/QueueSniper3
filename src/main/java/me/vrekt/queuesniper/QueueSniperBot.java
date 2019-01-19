@@ -58,7 +58,6 @@ public class QueueSniperBot {
     public void whenReady(ReadyEvent event) {
         JDA jda = event.getJDA();
 
-        jda.getRestPing().queue(time -> System.out.println(time + " rest ping time"));
         Concurrent.start();
 
         boolean result = AccountAPI.buildFortnite(username, password);

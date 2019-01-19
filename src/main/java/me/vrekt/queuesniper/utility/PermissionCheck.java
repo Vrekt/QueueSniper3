@@ -8,8 +8,7 @@ import net.dv8tion.jda.api.entities.Member;
  */
 public class PermissionCheck {
 
-    private static final Permission[] PERMISSIONS = {
-            Permission.MANAGE_CHANNEL, Permission.MESSAGE_WRITE, Permission.MESSAGE_ADD_REACTION,
+    private static final Permission[] PERMISSIONS = {Permission.MESSAGE_WRITE, Permission.MESSAGE_ADD_REACTION,
             Permission.MESSAGE_EMBED_LINKS, Permission.VOICE_CONNECT, Permission.VOICE_SPEAK, Permission.MESSAGE_READ,
             Permission.MESSAGE_MANAGE, Permission.MANAGE_CHANNEL, Permission.MESSAGE_MENTION_EVERYONE
     };

@@ -13,6 +13,7 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.TextChannel;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class LinkCommand extends Command {
 
@@ -28,7 +29,7 @@ public class LinkCommand extends Command {
         }
 
         String platformParse = arguments.get(0);
-        String name = arguments.get(1);
+        String name = arguments.stream().skip(1).collect(Collectors.joining(" "));
 
         Platform platform = parse(platformParse);
         if (platform == null) {
@@ -37,8 +38,7 @@ public class LinkCommand extends Command {
         }
 
         EmbedBuilder embed = EmbedUtility.getSnipeEmbed();
-        embed.setFooter("Please wait while I query the API for your account.\nThis may take awhile depending on certain factors.\nIf it " +
-                "has been more than 5 minutes the request is terminated.", null);
+        embed.setDescription("Please wait while I attempt to find your account...");
         MessageAction.send(channel, embed.build());
 
         Concurrent.runAsync(() -> AccountAPI.getAccountAndSetIfExists(from, channel, name, platform, configuration));

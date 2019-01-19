@@ -28,13 +28,11 @@ public class GuildConfigurationImpl implements GuildConfiguration {
     private final Map<String, Map<Account, Platform>> fortniteAccounts = new ConcurrentHashMap<>();
     private final HashSet<Role> controllers = new HashSet<>();
     private final HashSet<Role> announcers = new HashSet<>();
-
     private TextChannel announcementChannel;
     private TextChannel commandChannel;
     private TextChannel matchIdChannel;
     private TextChannel matchIdEmbedChannel;
     private VoiceChannel countdownChannel;
-
     private int countdownDelay, channelLock;
     private String prefix;
 

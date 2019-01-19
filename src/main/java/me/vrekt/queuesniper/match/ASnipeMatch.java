@@ -9,6 +9,7 @@ import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.api.exceptions.ErrorResponseException;
@@ -24,6 +25,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -33,22 +35,25 @@ public class ASnipeMatch {
     private final Playlist type;
 
     private final Map<String, LinkedList<String>> servers = new LinkedHashMap<>();
+
     private final List<String> players = new ArrayList<>();
 
     private final EmbedBuilder matchIdEmbed = new EmbedBuilder();
-    private final TextChannel matchIdEmbedChannel, matchIdChannel, sentIn;
+    private final TextChannel matchIdEmbedChannel, matchIdChannel, channel;
 
-    private final long id = System.currentTimeMillis();
     private final boolean wasChannelProvided;
 
-    private String embedMessageId, embedInfoMessageId, startingMessageId, announcersMessageId;
+    private final String startingMessageId, taskId = UUID.randomUUID().toString();
+
+    private String embedMessageId, embedInfoMessageId, announcersMessageId;
 
     ASnipeMatch(GuildConfiguration configuration, Playlist type, TextChannel channel, String startingMessageId,
                 String announcersMessageId, boolean wasChannelProvided) {
+
         this.configuration = configuration;
         this.type = type;
 
-        this.sentIn = channel;
+        this.channel = channel;
         this.startingMessageId = startingMessageId;
         this.announcersMessageId = announcersMessageId;
         this.wasChannelProvided = wasChannelProvided;
@@ -57,7 +62,8 @@ public class ASnipeMatch {
         matchIdChannel = configuration.getMatchIdChannel();
 
         EmbedBuilder embed = new EmbedBuilder().setColor(new Color(114, 109, 168));
-        embed.addField("Waiting for match IDs...", "*Please post the last 3 characters of your match ID once you are in the game! " +
+        embed.addField("Waiting for match IDs...",
+                "*Please post the last 3 characters of your match ID once you are in the game! " +
                         "Instructions:*\n\n" +
                         "This can be found in the top left of your screen.\n" +
                         "Match IDs should go in the channel: " + configuration.getMatchIdChannel().getAsMention() + "",
@@ -65,14 +71,16 @@ public class ASnipeMatch {
         embed.setImage("https://i.imgur.com/z4kiUNS.png");
         embed.setFooter("Players participating: " + configuration.getCountdownChannel().getMembers().size(), null);
 
+        TextChannel announcements = wasChannelProvided ? channel : configuration.getAnnouncementChannel();
+
         try {
-            channel.sendMessage(embed.build()).queue(message -> embedInfoMessageId = message.getId());
+            announcements.sendMessage(embed.build()).queue(message -> embedInfoMessageId = message.getId());
         } catch (ErrorResponseException | InsufficientPermissionException exception) {
-            finish(channel.getJDA());
+            lock();
             return;
         }
 
-        matchIdEmbed.setColor(new Color(160, 210, 219)).setAuthor("PLAYERS AND SERVERS:");
+        matchIdEmbed.setColor(new Color(160, 210, 219)).setDescription("Waiting for IDs...");
         try {
             if (wasChannelProvided) {
                 channel.sendMessage(matchIdEmbed.build()).queue(message -> embedMessageId = message.getId());
@@ -80,27 +88,14 @@ public class ASnipeMatch {
                 matchIdEmbedChannel.sendMessage(matchIdEmbed.build()).queue(message -> embedMessageId = message.getId());
             }
         } catch (ErrorResponseException | InsufficientPermissionException exception) {
-            finish(channel.getJDA());
+            lock();
             return;
         }
 
-        // Allow typing
-        try {
-            if (wasChannelProvided) {
-                channel.putPermissionOverride(configuration.getGuild().getPublicRole()).setAllow(Permission.MESSAGE_WRITE).queue();
-                configuration.getAnnouncers().forEach(role -> channel.putPermissionOverride(role).setAllow(Permission.MESSAGE_WRITE).queue());
-            } else {
-                matchIdChannel.putPermissionOverride(configuration.getGuild().getPublicRole()).setAllow(Permission.MESSAGE_WRITE).queue();
-                configuration.getAnnouncers().forEach(role -> matchIdChannel.putPermissionOverride(role).setAllow(Permission.MESSAGE_WRITE).queue());
-            }
-        } catch (ErrorResponseException | InsufficientPermissionException exception) {
-            finish(channel.getJDA());
-            return;
-        }
+        unlock();
 
-        // register cleanup
         channel.getJDA().addEventListener(this);
-        Concurrent.runAsyncLater(() -> finish(channel.getJDA()), Duration.of(configuration.getChannelLock(), ChronoUnit.SECONDS).toMillis(), id);
+        Concurrent.runAsyncLater(() -> finish(channel.getJDA()), Duration.of(configuration.getChannelLock(), ChronoUnit.SECONDS).toMillis(), taskId);
     }
 
     @SubscribeEvent
@@ -110,7 +105,7 @@ public class ASnipeMatch {
         Guild guild = event.getGuild();
         TextChannel channel = event.getChannel();
         if (!guild.getId().equals(configuration.getGuild().getId())) return;
-        if (!channel.getId().equals(matchIdChannel.getId())) return;
+        if (!channel.getId().equals(wasChannelProvided ? this.channel.getId() : matchIdChannel.getId())) return;
 
         Member from = event.getMember();
         if (configuration.isSelf(from)) return;
@@ -161,7 +156,8 @@ public class ASnipeMatch {
      */
     private void editEmbed() {
         AtomicInteger fancy = new AtomicInteger(1);
-        matchIdEmbed.clearFields();
+        StringBuilder singleBuilder = new StringBuilder();
+        matchIdEmbed.clearFields().setDescription("").setTitle("[PLAYERS AND SERVERS]");
 
         // TODO: Better sorting?
 
@@ -198,7 +194,7 @@ public class ASnipeMatch {
                 int amountSkipped = players.size() - skipped.size();
                 String field = String.join("\n", skipped) + "\n*and " + amountSkipped + " more players...*";
                 matchIdEmbed.addField("ID: " + serverId + " (" + players.size() + " players)", field, true);
-            } else {
+            } else if (players.size() > 1) {
                 String field = String.join("\n", players);
                 matchIdEmbed.addField("ID: " + serverId + " (" + players.size() + " players)", field, true);
             }
@@ -207,9 +203,18 @@ public class ASnipeMatch {
                 matchIdEmbed.addBlankField(true);
             }
 
+            if (players.size() == 1) {
+                String player = players.get(0);
+                String append = player + " (" + serverId + "), ";
+                singleBuilder.append(append);
+            }
         }
 
-        MessageAction.edit(matchIdEmbedChannel, embedMessageId, matchIdEmbed.build());
+        if (singleBuilder.length() != 0) {
+            matchIdEmbed.addField("Single lobbies: ", singleBuilder.toString(), false);
+        }
+
+        MessageAction.edit(wasChannelProvided ? channel : matchIdEmbedChannel, embedMessageId, matchIdEmbed.build());
     }
 
     private LinkedList<String> skip(int amount, List<String> list) {
@@ -224,36 +229,8 @@ public class ASnipeMatch {
     private void finish(JDA jda) {
         MatchQueue.matchFinished(this);
         jda.removeEventListener(this);
-        try {
-            if (wasChannelProvided) {
-                sentIn.putPermissionOverride(configuration.getGuild().getPublicRole()).setDeny(Permission.MESSAGE_WRITE).queue();
-                configuration.getAnnouncers().forEach(role -> sentIn.putPermissionOverride(role).setDeny(Permission.MESSAGE_WRITE).queue());
-                sentIn.putPermissionOverride(configuration.getGuild().getPublicRole()).setDeny(Permission.MESSAGE_ADD_REACTION).queue();
-                configuration.getAnnouncers().forEach(role -> sentIn.putPermissionOverride(role).setDeny(Permission.MESSAGE_ADD_REACTION).queue());
-            } else {
-                matchIdChannel.putPermissionOverride(configuration.getGuild().getPublicRole()).setDeny(Permission.MESSAGE_WRITE).queue();
-                configuration.getAnnouncers().forEach(role -> matchIdChannel.putPermissionOverride(role).setDeny(Permission.MESSAGE_WRITE).queue());
-                matchIdChannel.putPermissionOverride(configuration.getGuild().getPublicRole()).setDeny(Permission.MESSAGE_ADD_REACTION).queue();
-                configuration.getAnnouncers().forEach(role -> matchIdChannel.putPermissionOverride(role).setDeny(Permission.MESSAGE_ADD_REACTION).queue());
-            }
-        } catch (ErrorResponseException | InsufficientPermissionException exception) {
-            return;
-        }
+        lock();
 
-        // grab all single servers
-        StringBuilder single = new StringBuilder();
-        LinkedList<String> singleServers = new LinkedList<>();
-
-        servers.keySet().stream().filter(key -> servers.get(key).size() == 1).forEach(key -> {
-            String player = configuration.getGuild().getMemberById(servers.get(key).get(0)).getAsMention();
-            String append = player + " (" + key + "), ";
-            single.append(append);
-
-            singleServers.add(player);
-        });
-
-        singleServers.forEach(server -> matchIdEmbed.getFields().removeIf(field -> field.getName().contains(server)));
-        matchIdEmbed.addField("Single lobbies: ", single.toString(), false);
         matchIdEmbed.setFooter("Match started: (" + players.size() + " players) (" + servers.keySet().size() + " servers)", null);
         MessageAction.send(matchIdChannel, "*Chat locked...* Match started, good luck and have fun!");
         MessageAction.edit(matchIdEmbedChannel, embedMessageId, matchIdEmbed.build());
@@ -272,26 +249,80 @@ public class ASnipeMatch {
      * @param jda jda
      */
     void cancel(JDA jda) {
-        Concurrent.cancelTask(id);
+        Concurrent.cancelTask(taskId);
         MatchQueue.matchFinished(this);
         jda.removeEventListener(this);
 
-        try {
-            matchIdChannel.putPermissionOverride(configuration.getGuild().getPublicRole()).setDeny(Permission.MESSAGE_WRITE).queue();
-            configuration.getAnnouncers().forEach(role -> matchIdChannel.putPermissionOverride(role).setDeny(Permission.MESSAGE_WRITE).queue());
-            matchIdChannel.putPermissionOverride(configuration.getGuild().getPublicRole()).setDeny(Permission.MESSAGE_ADD_REACTION).queue();
-            configuration.getAnnouncers().forEach(role -> matchIdChannel.putPermissionOverride(role).setDeny(Permission.MESSAGE_ADD_REACTION).queue());
-        } catch (InsufficientPermissionException exception) {
-            //
-        }
+        lock();
 
-        MessageAction.send(sentIn, "*Match cancelled...*");
-        MessageAction.delete(wasChannelProvided ? sentIn : matchIdEmbedChannel, embedMessageId);
-        MessageAction.delete(sentIn, startingMessageId);
-        MessageAction.delete(sentIn, embedInfoMessageId);
-        MessageAction.delete(sentIn, announcersMessageId);
+        if (wasChannelProvided) {
+            MessageAction.delete(channel, announcersMessageId);
+            MessageAction.delete(channel, startingMessageId);
+            MessageAction.delete(channel, embedInfoMessageId);
+            MessageAction.delete(channel, embedMessageId);
+        } else {
+            MessageAction.delete(configuration.getAnnouncementChannel(), announcersMessageId);
+            MessageAction.delete(configuration.getAnnouncementChannel(), startingMessageId);
+            MessageAction.delete(configuration.getAnnouncementChannel(), embedInfoMessageId);
+            MessageAction.delete(matchIdEmbedChannel, embedMessageId);
+        }
 
         servers.clear();
         players.clear();
     }
+
+    /**
+     * Locks the appropriate channels
+     */
+    private void lock() {
+        if (wasChannelProvided) {
+            try {
+                channel.putPermissionOverride(configuration.getGuild().getPublicRole()).setDeny(Permission.MESSAGE_WRITE).queue();
+                channel.putPermissionOverride(configuration.getGuild().getPublicRole()).setDeny(Permission.MESSAGE_ADD_REACTION).queue();
+                for (Role announcer : configuration.getAnnouncers()) {
+                    channel.putPermissionOverride(announcer).setDeny(Permission.MESSAGE_WRITE).queue();
+                    channel.putPermissionOverride(announcer).setDeny(Permission.MESSAGE_ADD_REACTION).queue();
+                }
+            } catch (ErrorResponseException | InsufficientPermissionException exception) {
+                //
+            }
+        } else {
+            try {
+                matchIdChannel.putPermissionOverride(configuration.getGuild().getPublicRole()).setDeny(Permission.MESSAGE_WRITE).queue();
+                matchIdChannel.putPermissionOverride(configuration.getGuild().getPublicRole()).setDeny(Permission.MESSAGE_ADD_REACTION).queue();
+                for (Role announcer : configuration.getAnnouncers()) {
+                    matchIdChannel.putPermissionOverride(announcer).setDeny(Permission.MESSAGE_WRITE).queue();
+                    matchIdChannel.putPermissionOverride(announcer).setDeny(Permission.MESSAGE_ADD_REACTION).queue();
+                }
+            } catch (ErrorResponseException | InsufficientPermissionException exception) {
+                //
+            }
+        }
+    }
+
+    /**
+     * Unlocks the appropriate channel
+     */
+    private void unlock() {
+        if (wasChannelProvided) {
+            try {
+                channel.putPermissionOverride(configuration.getGuild().getPublicRole()).setAllow(Permission.MESSAGE_WRITE).queue();
+                for (Role announcer : configuration.getAnnouncers()) {
+                    channel.putPermissionOverride(announcer).setAllow(Permission.MESSAGE_WRITE).queue();
+                }
+            } catch (ErrorResponseException | InsufficientPermissionException exception) {
+                //
+            }
+        } else {
+            try {
+                matchIdChannel.putPermissionOverride(configuration.getGuild().getPublicRole()).setAllow(Permission.MESSAGE_WRITE).queue();
+                for (Role announcer : configuration.getAnnouncers()) {
+                    matchIdChannel.putPermissionOverride(announcer).setAllow(Permission.MESSAGE_WRITE).queue();
+                }
+            } catch (ErrorResponseException | InsufficientPermissionException exception) {
+                //
+            }
+        }
+    }
+
 }
